@@ -55,10 +55,8 @@ css = """
         margin-bottom: 0.9rem;
     }
 
-    div[data-testid="stButton"][id="banner_home"] button,
-    div#banner_home button,
-    button#banner_home,
-    button[aria-label="Inicio"] {
+    form#banner_form button,
+    div[data-testid="stForm"][id="banner_form"] button {
         display: block;
         width: 100%;
         height: 140px;
@@ -76,10 +74,8 @@ css = """
         color: transparent;
     }
 
-    div[data-testid="stButton"][id="banner_home"] button:active,
-    div#banner_home button:active,
-    button#banner_home:active,
-    button[aria-label="Inicio"]:active {
+    form#banner_form button:active,
+    div[data-testid="stForm"][id="banner_form"] button:active {
         transform: scale(0.995);
     }
 
@@ -184,10 +180,8 @@ css = """
         .metric-card { display: flex; align-items: center; justify-content: space-between; }
         .metric-value { font-size: 1.6rem; }
         .app-title { font-size: 1.15rem; }
-        div[data-testid="stButton"][id="banner_home"] button,
-        div#banner_home button,
-        button#banner_home,
-        button[aria-label="Inicio"] { height: 110px; }
+        form#banner_form button,
+        div[data-testid="stForm"][id="banner_form"] button { height: 110px; }
         .tabbar div[role="radiogroup"],
         div[role="radiogroup"][aria-label="Secciones"] { gap: 0.4rem; }
     }
@@ -196,7 +190,9 @@ css = """
 
 st.markdown(css.replace("LOGO_B64", logo_b64), unsafe_allow_html=True)
 
-if st.button("Inicio", key="banner_home"):
+with st.form("banner_form"):
+    banner_click = st.form_submit_button("Inicio")
+if banner_click:
     st.session_state["tab_seleccion"] = "Registro"
     st.rerun()
 
