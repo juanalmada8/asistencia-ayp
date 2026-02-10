@@ -2,7 +2,6 @@
 from datetime import datetime, timedelta
 
 import streamlit as st
-from PIL import Image
 
 MAX_INTENTOS = 5
 BLOQUEO_MINUTOS = 5
@@ -17,17 +16,16 @@ def login():
         st.session_state.login_blocked_until = None
 
     if not st.session_state.logged_in:
-        st.markdown("### 🔐 Ingreso de entrenador")
+        st.markdown("### Ingreso de entrenador")
 
         blocked_until = st.session_state.login_blocked_until
         if blocked_until and datetime.now() < blocked_until:
             restante = int((blocked_until - datetime.now()).total_seconds() // 60) + 1
-            st.warning(f"⏳ Demasiados intentos fallidos. Reintentá en {restante} minuto(s).")
+            st.warning(f"Demasiados intentos fallidos. Reintentá en {restante} minuto(s).")
             return False
 
         pwd = st.text_input("Clave de acceso", type="password")
-
-        if pwd:
+        if st.button("Ingresar", type="primary") and pwd:
             if pwd == st.secrets["app"]["password"]:
                 st.session_state.logged_in = True
                 st.session_state.login_attempts = 0
@@ -45,7 +43,4 @@ def login():
                 st.error(f"Clave incorrecta. Intentos restantes: {intentos_restantes}")
 
         return False
-
-    logo = Image.open("icon.jpg")
-    st.image(logo, width=120)
     return True

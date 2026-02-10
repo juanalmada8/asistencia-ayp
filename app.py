@@ -1,3 +1,4 @@
+import base64
 import streamlit as st
 
 from config import SHEET_ID
@@ -7,8 +8,11 @@ from ui.resumen import mostrar_resumen_insights
 
 st.set_page_config(page_title="Registro de Asistencia", page_icon="icon.jpg", layout="centered")
 
+with open("icon.jpg", "rb") as logo_file:
+    logo_b64 = base64.b64encode(logo_file.read()).decode("utf-8")
+
 st.markdown(
-    """
+    f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=DM+Sans:wght@400;600&display=swap');
 
@@ -50,6 +54,25 @@ st.markdown(
         background: linear-gradient(135deg, #141a2b 0%, #0f121a 100%);
         border: 1px solid var(--border);
         margin-bottom: 0.9rem;
+    }
+
+    .brand-banner {
+        display: block;
+        width: 100%;
+        height: 140px;
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        background-color: #121522;
+        background-image: url("data:image/jpeg;base64,{logo_b64}");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+        margin-bottom: 0.9rem;
+    }
+
+    .brand-banner:active {
+        transform: scale(0.995);
     }
 
     .app-title {
@@ -121,11 +144,14 @@ st.markdown(
         .metric-card { display: flex; align-items: center; justify-content: space-between; }
         .metric-value { font-size: 1.6rem; }
         .app-title { font-size: 1.15rem; }
+        .brand-banner { height: 110px; }
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
+
+st.markdown('<a class="brand-banner" href="/" title="Inicio"></a>', unsafe_allow_html=True)
 
 if not login():
     st.stop()
