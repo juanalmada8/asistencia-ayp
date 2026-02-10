@@ -7,10 +7,9 @@ from services.google_sheets import (
     obtener_asistencias_previas,
     upsert_asistencias,
 )
-from services.asistencia import generar_resumen
 from ui.login import login
 from ui.registro import mostrar_formulario_asistencia
-from ui.resumen import mostrar_boton_resumen
+from ui.resumen import mostrar_resumen_insights
 
 st.set_page_config(page_title="Registro de Asistencia", page_icon="icon.jpg", layout="centered")
 
@@ -215,65 +214,4 @@ if tab_seleccion == "📝 Registro":
                     st.exception(e)
 
 if tab_seleccion == "📊 Resumen":
-    st.markdown(
-        """
-        <div class="app-header">
-            <div>
-                <div class="app-title">Resumen de Asistencia</div>
-                <div class="app-subtitle">Insights rápidos y exportación</div>
-            </div>
-            <div style="font-size: 1.4rem;">📊</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    if st.button("🔄 Actualizar insights", type="primary"):
-        with st.spinner("Calculando resumen..."):
-            try:
-                st.session_state.resumen_cache = generar_resumen(SHEET_ID)
-            except Exception as e:
-                st.error("❌ Error al generar el resumen.")
-                st.exception(e)
-
-    resumen_data = st.session_state.get("resumen_cache")
-    if resumen_data:
-        entrenamientos = resumen_data["entrenamientos_por_mes"]
-        presencias = resumen_data["presencias_por_jugadora_mes"]
-        tardanzas = resumen_data["llegadas_tarde_mes"]
-        ranking = resumen_data["ranking"]
-
-        total_entrenamientos = int(entrenamientos["Entrenamientos del mes"].sum()) if not entrenamientos.empty else 0
-        total_presencias = int(presencias["Presencias"].sum()) if not presencias.empty else 0
-        total_tardanzas = int(tardanzas["Tardanzas"].sum()) if not tardanzas.empty else 0
-        top_jugadora = ranking.iloc[0]["Jugadora"] if not ranking.empty else "-"
-
-        st.markdown(
-            f"""
-            <div class="metrics">
-                <div class="metric-card">
-                    <div class="metric-label">Entrenamientos</div>
-                    <div class="metric-value">{total_entrenamientos}</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Presencias</div>
-                    <div class="metric-value">{total_presencias}</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Tardanzas</div>
-                    <div class="metric-value">{total_tardanzas}</div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        st.markdown('<div class="section-title">Top jugadora</div>', unsafe_allow_html=True)
-        st.markdown(f"**{top_jugadora}**", unsafe_allow_html=True)
-
-        st.markdown('<div class="section-title">Ranking (Top 5)</div>', unsafe_allow_html=True)
-        st.dataframe(ranking.head(5), use_container_width=True, hide_index=True)
-    else:
-        st.info("Tocá “Actualizar insights” para ver el resumen.")
-
-    mostrar_boton_resumen(SHEET_ID)
+    mostrar_resumen_insights(SHEET_ID)
