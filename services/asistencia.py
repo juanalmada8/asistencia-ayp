@@ -7,7 +7,7 @@ SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/au
 REQUIRED_COLUMNS = ["Fecha", "Jugadora", "Asistió", "Llegó tarde"]
 
 
-def generar_resumen(sheet_id):
+def generar_resumen(sheet_id, fecha_desde=None, fecha_hasta=None, jugadoras_filtro=None):
     creds = ServiceAccountCredentials.from_json_keyfile_dict(CREDENTIALS_DICT, SCOPE)
     client = gspread.authorize(creds)
     spreadsheet = client.open_by_key(sheet_id)
@@ -29,6 +29,16 @@ def generar_resumen(sheet_id):
     df["Jugadora"] = df["Jugadora"].astype(str).str.strip()
     df["Asistió"] = df["Asistió"].astype(str).str.strip().str.upper()
     df["Llegó tarde"] = df["Llegó tarde"].astype(str).str.strip().str.upper()
+    if fecha_desde is not None:
+        df = df[df["Fecha"] >= pd.to_datetime(fecha_desde)]
+    if fecha_hasta is not None:
+        df = df[df["Fecha"] <= pd.to_datetime(fecha_hasta)]
+    if jugadoras_filtro:
+        df = df[df["Jugadora"].isin(jugadoras_filtro)]
+
+    if df.empty:
+        return None
+
     df["Mes"] = df["Fecha"].dt.to_period("M")
 
     entrenamientos_por_mes = df.groupby("Mes")["Fecha"].nunique().reset_index(name="Entrenamientos del mes")

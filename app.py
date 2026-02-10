@@ -1,14 +1,8 @@
 import streamlit as st
-from datetime import datetime
 
-from config import SHEET_ID, ARG_TZ
-from services.google_sheets import (
-    cargar_jugadoras,
-    obtener_asistencias_previas,
-    upsert_asistencias,
-)
+from config import SHEET_ID
 from ui.login import login
-from ui.registro import mostrar_formulario_asistencia
+from ui.registro import mostrar_registro_tab
 from ui.resumen import mostrar_resumen_insights
 
 st.set_page_config(page_title="Registro de Asistencia", page_icon="icon.jpg", layout="centered")
@@ -144,74 +138,7 @@ tab_seleccion = st.radio(
 )
 
 if tab_seleccion == "📝 Registro":
-    st.markdown(
-        """
-        <div class="app-header">
-            <div>
-                <div class="app-title">Registro de Asistencia</div>
-                <div class="app-subtitle">Marcá rápido y guardá en un toque</div>
-            </div>
-            <div style="font-size: 1.4rem;">🏑</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown('<div class="section-title">Fecha</div>', unsafe_allow_html=True)
-    fecha = st.date_input("Fecha", value=datetime.now(ARG_TZ).date(), label_visibility="collapsed")
-
-    if "jugadoras" not in st.session_state:
-        with st.spinner("Cargando jugadoras..."):
-            st.session_state.jugadoras = cargar_jugadoras()
-
-    if "asistencias_previas" not in st.session_state or st.session_state.get("asistencia_fecha") != fecha:
-        with st.spinner("Buscando asistencias previas..."):
-            st.session_state.asistencias_previas = obtener_asistencias_previas(fecha)
-            st.session_state.asistencia_fecha = fecha
-
-    jugadoras = st.session_state.jugadoras
-    jugadoras_presentes = st.session_state.asistencias_previas
-    jugadoras_faltantes = [j for j in jugadoras if j not in jugadoras_presentes]
-
-    st.markdown(
-        f"""
-        <div class="metrics">
-            <div class="metric-card">
-                <div class="metric-label">Total jugadoras</div>
-                <div class="metric-value">{len(jugadoras)}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Ya registradas</div>
-                <div class="metric-value">{len(jugadoras_presentes)}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Pendientes</div>
-                <div class="metric-value">{len(jugadoras_faltantes)}</div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    if not jugadoras_faltantes:
-        st.success("✅ Todas las jugadoras ya tienen registrada la asistencia para esta fecha.")
-    else:
-        nuevas_filas = mostrar_formulario_asistencia(jugadoras_faltantes, fecha)
-        if nuevas_filas:
-            with st.spinner("Guardando asistencia..."):
-                try:
-                    resultado = upsert_asistencias(SHEET_ID, "Asistencias", nuevas_filas)
-                    total = sum(1 for fila in nuevas_filas if fila[2] == "SÍ")
-                    st.success(
-                        "✅ ¡Asistencia guardada! "
-                        f"{total} jugadoras asistieron. "
-                        f"(Actualizadas: {resultado['actualizadas']} | Agregadas: {resultado['agregadas']})"
-                    )
-                    del st.session_state["asistencias_previas"]
-                    obtener_asistencias_previas.clear()
-                except Exception as e:
-                    st.error("❌ Error al guardar la asistencia.")
-                    st.exception(e)
+    mostrar_registro_tab(SHEET_ID)
 
 if tab_seleccion == "📊 Resumen":
     mostrar_resumen_insights(SHEET_ID)

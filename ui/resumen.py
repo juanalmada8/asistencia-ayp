@@ -2,9 +2,12 @@
 import streamlit as st
 import pandas as pd
 import gspread
+from datetime import datetime, timedelta
 
+from config import ARG_TZ
 from services.asistencia import generar_resumen
-from services.google_sheets import cargar_jugadoras
+from services.google_sheets import cargar_jugadoras_con_categoria
+from ui.categorias import selector_categoria, filtrar_jugadoras
 
 
 def exportar_df_a_hoja(ws, df, fila_inicio):
@@ -22,10 +25,10 @@ def exportar_df_a_hoja(ws, df, fila_inicio):
     return fila_inicio + len(df) + 2
 
 
-def mostrar_boton_resumen(sheet_id):
+def mostrar_boton_resumen(sheet_id, fecha_desde=None, fecha_hasta=None, jugadoras_filtro=None):
     if st.button("📊 Generar resumen de asistencia"):
         with st.spinner("Generando resumen..."):
-            generar_y_exportar_resumen(sheet_id)
+            generar_y_exportar_resumen(sheet_id, fecha_desde, fecha_hasta, jugadoras_filtro)
 
 
 def _render_metrics(cards):
@@ -72,10 +75,44 @@ def mostrar_resumen_insights(sheet_id):
         unsafe_allow_html=True,
     )
 
+    categoria = selector_categoria()
+    hoy = datetime.now(ARG_TZ).date()
+    fecha_desde = hoy - timedelta(days=45)
+    fecha_hasta = hoy
+
+    if "jugadoras_data" not in st.session_state:
+        with st.spinner("Cargando jugadoras..."):
+            st.session_state.jugadoras_data = cargar_jugadoras_con_categoria()
+
+    jugadoras_categoria = filtrar_jugadoras(st.session_state.jugadoras_data, categoria)
+    if not jugadoras_categoria:
+        st.warning("No hay jugadoras para esta categoría.")
+        return
+
+    st.caption(
+        f"Últimos 45 días ({fecha_desde.strftime('%d/%m/%Y')} - {fecha_hasta.strftime('%d/%m/%Y')}) · "
+        f"Categoría: {categoria}"
+    )
+
+    resumen_meta = (categoria, fecha_desde, fecha_hasta)
+    if st.session_state.get("resumen_cache_meta") != resumen_meta:
+        st.session_state.resumen_cache = None
+        st.session_state.resumen_cache_meta = resumen_meta
+
     if st.button("🔄 Actualizar insights", type="primary"):
         with st.spinner("Calculando resumen..."):
             try:
-                st.session_state.resumen_cache = generar_resumen(sheet_id)
+                resumen_tmp = generar_resumen(
+                    sheet_id,
+                    fecha_desde=fecha_desde,
+                    fecha_hasta=fecha_hasta,
+                    jugadoras_filtro=jugadoras_categoria,
+                )
+                if not resumen_tmp:
+                    st.warning("❗ No hay datos para este rango y categoría.")
+                    st.session_state.resumen_cache = None
+                else:
+                    st.session_state.resumen_cache = resumen_tmp
             except Exception as e:
                 st.error("❌ Error al generar el resumen.")
                 st.exception(e)
@@ -83,7 +120,7 @@ def mostrar_resumen_insights(sheet_id):
     resumen_data = st.session_state.get("resumen_cache")
     if not resumen_data:
         st.info("Tocá “Actualizar insights” para ver el resumen.")
-        mostrar_boton_resumen(sheet_id)
+        mostrar_boton_resumen(sheet_id, fecha_desde, fecha_hasta, jugadoras_categoria)
         return
 
     entrenamientos = resumen_data["entrenamientos_por_mes"]
@@ -96,10 +133,7 @@ def mostrar_resumen_insights(sheet_id):
     total_tardanzas = int(tardanzas["Tardanzas"].sum()) if not tardanzas.empty else 0
     top_jugadora = ranking.iloc[0]["Jugadora"] if not ranking.empty else "-"
 
-    if "jugadoras" not in st.session_state:
-        with st.spinner("Cargando jugadoras..."):
-            st.session_state.jugadoras = cargar_jugadoras()
-    total_jugadoras = len(st.session_state.jugadoras)
+    total_jugadoras = len(jugadoras_categoria)
 
     asistencia_promedio = round(total_presencias / total_entrenamientos, 1) if total_entrenamientos > 0 else 0
     porcentaje_asistencia = (
@@ -115,7 +149,7 @@ def mostrar_resumen_insights(sheet_id):
         if not tardanzas.empty
         else tardanzas
     )
-    sin_asistencia = sorted(set(st.session_state.jugadoras) - set(ranking["Jugadora"])) if not ranking.empty else []
+    sin_asistencia = sorted(set(jugadoras_categoria) - set(ranking["Jugadora"])) if not ranking.empty else []
 
     if total_entrenamientos > 0 and not ranking_presencias.empty:
         ranking_faltas = ranking_presencias.copy()
@@ -124,11 +158,14 @@ def mostrar_resumen_insights(sheet_id):
     else:
         ranking_faltas = ranking_presencias
 
+    if not ranking_faltas.empty and "Faltas" in ranking_faltas.columns:
+        ranking_faltas = ranking_faltas.rename(columns={"Faltas": "Ausencias"})
+
     presencias_por_jugadora = {
         row["Jugadora"]: int(row["Presencias"]) for _, row in ranking_presencias.iterrows()
     }
     resumen_jugadoras = []
-    for jugadora in st.session_state.jugadoras:
+    for jugadora in jugadoras_categoria:
         presencias_j = presencias_por_jugadora.get(jugadora, 0)
         porcentaje_j = round((presencias_j / total_entrenamientos) * 100, 1) if total_entrenamientos > 0 else 0
         resumen_jugadoras.append(
@@ -203,7 +240,7 @@ def mostrar_resumen_insights(sheet_id):
         [
             ("Último mes (% asistencia)", f"{porcentaje_asistencia_mes}%"),
             ("Perfectas", len(perfectas)),
-            ("En riesgo (<50%)", len(en_riesgo)),
+            ("Baja asistencia (<50%)", len(en_riesgo)),
         ]
     )
 
@@ -232,10 +269,10 @@ def mostrar_resumen_insights(sheet_id):
     else:
         st.caption("Sin datos de asistencia por jugadora.")
 
-    st.markdown('<div class="section-title">Faltas (Top 5)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Ausencias (Top 5)</div>', unsafe_allow_html=True)
     if not ranking_faltas.empty:
         st.dataframe(
-            ranking_faltas[["Jugadora", "Faltas"]].head(5),
+            ranking_faltas[["Jugadora", "Ausencias"]].head(5),
             use_container_width=True,
             hide_index=True,
         )
@@ -257,14 +294,19 @@ def mostrar_resumen_insights(sheet_id):
         st.caption(_listar_nombres(perfectas))
 
     if en_riesgo:
-        st.markdown('<div class="section-title">En riesgo (<50%)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">Baja asistencia (<50%)</div>', unsafe_allow_html=True)
         st.caption(_listar_nombres(en_riesgo))
 
-    mostrar_boton_resumen(sheet_id)
+    mostrar_boton_resumen(sheet_id, fecha_desde, fecha_hasta, jugadoras_categoria)
 
 
-def generar_y_exportar_resumen(sheet_id):
-    resumen_data = generar_resumen(sheet_id)
+def generar_y_exportar_resumen(sheet_id, fecha_desde=None, fecha_hasta=None, jugadoras_filtro=None):
+    resumen_data = generar_resumen(
+        sheet_id,
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        jugadoras_filtro=jugadoras_filtro,
+    )
 
     if not resumen_data:
         st.warning("❗ No hay suficientes datos para generar el resumen.")

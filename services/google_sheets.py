@@ -16,12 +16,43 @@ def get_client():
     return gspread.authorize(creds)
 
 
+def _parse_categorias(value):
+    if value is None:
+        return set()
+    texto = str(value).replace(";", ",")
+    partes = [p.strip() for p in texto.split(",") if p.strip()]
+    categorias = set()
+    for parte in partes:
+        if parte == "1":
+            categorias.add("1")
+        elif parte == "2":
+            categorias.add("2")
+    return categorias
+
+
 @st.cache_data(ttl=300)
 def cargar_jugadoras():
     client = get_client()
     hoja = client.open_by_key(SHEET_ID).worksheet("Jugadoras")
     jugadoras = [j.strip() for j in hoja.col_values(1)[1:] if j.strip()]
     return sorted(set(jugadoras))
+
+
+@st.cache_data(ttl=300)
+def cargar_jugadoras_con_categoria():
+    client = get_client()
+    hoja = client.open_by_key(SHEET_ID).worksheet("Jugadoras")
+    nombres = hoja.col_values(1)[1:]
+    categorias = hoja.col_values(2)[1:]
+    total = max(len(nombres), len(categorias))
+    jugadoras = []
+    for i in range(total):
+        nombre = nombres[i].strip() if i < len(nombres) else ""
+        if not nombre:
+            continue
+        categoria_raw = categorias[i] if i < len(categorias) else ""
+        jugadoras.append({"jugadora": nombre, "categorias": _parse_categorias(categoria_raw)})
+    return jugadoras
 
 
 def _indices_columnas(encabezados, requeridas):
