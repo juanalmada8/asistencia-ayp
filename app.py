@@ -55,7 +55,7 @@ css = """
         margin-bottom: 0.9rem;
     }
 
-    .block-container div[data-testid="stButton"]:first-of-type button {
+    .banner-wrap + div [data-testid="stButton"] button {
         display: block;
         width: 100%;
         height: 140px;
@@ -73,7 +73,7 @@ css = """
         color: transparent;
     }
 
-    .block-container div[data-testid="stButton"]:first-of-type button:active {
+    .banner-wrap + div [data-testid="stButton"] button:active {
         transform: scale(0.995);
     }
 
@@ -173,7 +173,7 @@ css = """
         .metric-card { display: flex; align-items: center; justify-content: space-between; }
         .metric-value { font-size: 1.6rem; }
         .app-title { font-size: 1.15rem; }
-        .block-container div[data-testid="stButton"]:first-of-type button { height: 110px; }
+        .banner-wrap + div [data-testid="stButton"] button { height: 110px; }
         .tabbar div[role="radiogroup"] { gap: 0.4rem; }
     }
     </style>
@@ -181,6 +181,7 @@ css = """
 
 st.markdown(css.replace("LOGO_B64", logo_b64), unsafe_allow_html=True)
 
+st.markdown('<div class="banner-wrap"></div>', unsafe_allow_html=True)
 if st.button("Inicio", key="banner_home"):
     st.session_state["tab_seleccion"] = "Registro"
     st.rerun()
