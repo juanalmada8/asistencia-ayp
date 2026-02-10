@@ -137,9 +137,14 @@ st.markdown(
 if not login():
     st.stop()
 
-tab_registro, tab_resumen = st.tabs(["📝 Registro", "📊 Resumen"])
+tab_seleccion = st.radio(
+    "Secciones",
+    ["📝 Registro", "📊 Resumen"],
+    horizontal=True,
+    label_visibility="collapsed",
+)
 
-with tab_registro:
+if tab_seleccion == "📝 Registro":
     st.markdown(
         """
         <div class="app-header">
@@ -209,7 +214,7 @@ with tab_registro:
                     st.error("❌ Error al guardar la asistencia.")
                     st.exception(e)
 
-with tab_resumen:
+if tab_seleccion == "📊 Resumen":
     st.markdown(
         """
         <div class="app-header">
