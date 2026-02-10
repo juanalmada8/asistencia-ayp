@@ -1,28 +1,49 @@
+import pandas as pd
 import streamlit as st
 
+
 def mostrar_formulario_asistencia(jugadoras_faltantes, fecha):
-    st.markdown("### Jugadoras")
-    datos_asistencia = []
+    st.markdown("### Jugadoras pendientes")
+    st.caption("Marcá asistencia, tardanza y comentario en una sola tabla.")
 
-    for jugadora in jugadoras_faltantes:
-        st.markdown(f"**{jugadora}**")
-        asistio = st.checkbox("Asistió", key=f"asistio_{jugadora}")
-        tarde = False
-        comentario = ""
+    default_df = pd.DataFrame(
+        {
+            "Jugadora": jugadoras_faltantes,
+            "Asistió": [False] * len(jugadoras_faltantes),
+            "Llegó tarde": [False] * len(jugadoras_faltantes),
+            "Comentario": [""] * len(jugadoras_faltantes),
+        }
+    )
 
-        if asistio:
-            tarde = st.checkbox("Llegó tarde", key=f"tarde_{jugadora}")
-        comentario = st.text_input("Comentario (opcional)", key=f"comentario_{jugadora}")
+    edited_df = st.data_editor(
+        default_df,
+        hide_index=True,
+        use_container_width=True,
+        num_rows="fixed",
+        column_config={
+            "Jugadora": st.column_config.TextColumn(disabled=True),
+            "Asistió": st.column_config.CheckboxColumn(default=False),
+            "Llegó tarde": st.column_config.CheckboxColumn(default=False),
+            "Comentario": st.column_config.TextColumn(max_chars=120),
+        },
+        key=f"asistencia_editor_{fecha.strftime('%Y%m%d')}",
+    )
 
-        datos_asistencia.append([
-            fecha.strftime("%Y-%m-%d"),
-            jugadora,
-            "SÍ" if asistio else "NO",
-            "SÍ" if asistio and tarde else "NO",
-            comentario.upper() if comentario else ""
-        ])
-
-    if st.button("✅ Guardar asistencia"):
-        return datos_asistencia
+    if st.button("✅ Guardar asistencia", type="primary"):
+        filas = []
+        for _, row in edited_df.iterrows():
+            asistio = bool(row["Asistió"])
+            tarde = bool(row["Llegó tarde"]) if asistio else False
+            comentario = str(row["Comentario"]).strip().upper()
+            filas.append(
+                [
+                    fecha.strftime("%Y-%m-%d"),
+                    str(row["Jugadora"]).strip(),
+                    "SÍ" if asistio else "NO",
+                    "SÍ" if asistio and tarde else "NO",
+                    comentario,
+                ]
+            )
+        return filas
 
     return []

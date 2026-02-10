@@ -6,35 +6,52 @@ from config import SHEET_ID, CREDENTIALS_DICT
 
 SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
+
+def normalizar_texto(value):
+    return value.strip().lower().replace("ó", "o")
+
+
 def get_client():
     creds = ServiceAccountCredentials.from_json_keyfile_dict(CREDENTIALS_DICT, SCOPE)
     return gspread.authorize(creds)
 
+
+@st.cache_data(ttl=300)
 def cargar_jugadoras():
     client = get_client()
     hoja = client.open_by_key(SHEET_ID).worksheet("Jugadoras")
-    return hoja.col_values(1)[1:]
+    jugadoras = [j.strip() for j in hoja.col_values(1)[1:] if j.strip()]
+    return sorted(set(jugadoras))
 
 
+def _indices_columnas(encabezados, requeridas):
+    encabezados_norm = [normalizar_texto(e) for e in encabezados]
+    indices = {}
+    for col in requeridas:
+        col_norm = normalizar_texto(col)
+        if col_norm not in encabezados_norm:
+            raise ValueError(col)
+        indices[col] = encabezados_norm.index(col_norm)
+    return indices
+
+
+@st.cache_data(ttl=120)
 def obtener_asistencias_previas(fecha):
-    from config import CREDENTIALS_DICT, SHEET_ID
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(CREDENTIALS_DICT, scope)
-    client = gspread.authorize(creds)
-
+    client = get_client()
     hoja = client.open_by_key(SHEET_ID).worksheet("Asistencias")
     datos = hoja.get_all_values()
+    if not datos:
+        return []
+
     encabezados = datos[0]
 
-    # Normalizar encabezados para comparación
-    encabezados_norm = [e.strip().lower() for e in encabezados]
-
     try:
-        idx_fecha = encabezados_norm.index("fecha")
-        idx_jugadora = encabezados_norm.index("jugadora")
-        idx_asistio = encabezados_norm.index("asistió")
-    except ValueError as e:
-        st.error("❌ Error al leer los encabezados de la hoja 'Asistencias'. Verificá que existan las columnas: Fecha, Jugadora, Asistió.")
+        idx = _indices_columnas(encabezados, ["Fecha", "Jugadora", "Asistió"])
+    except ValueError:
+        st.error(
+            "❌ Error al leer los encabezados de la hoja 'Asistencias'. "
+            "Verificá que existan las columnas: Fecha, Jugadora, Asistió."
+        )
         st.write("Encabezados detectados:", encabezados)
         return []
 
@@ -42,44 +59,48 @@ def obtener_asistencias_previas(fecha):
     ultimos_registros = {}
 
     for fila in datos[1:]:
-        if len(fila) <= max(idx_fecha, idx_jugadora, idx_asistio):
+        if len(fila) <= max(idx.values()):
             continue
-        f_fecha = fila[idx_fecha].strip()
-        f_jugadora = fila[idx_jugadora].strip()
-        f_asistio = fila[idx_asistio].strip().upper()
+        f_fecha = fila[idx["Fecha"]].strip()
+        f_jugadora = fila[idx["Jugadora"]].strip()
+        f_asistio = fila[idx["Asistió"]].strip().upper()
         if f_fecha == fecha_str:
             ultimos_registros[f_jugadora] = f_asistio
 
-    jugadoras_presentes = [j for j, estado in ultimos_registros.items() if estado == "SÍ"]
-    return jugadoras_presentes
-
+    return [j for j, estado in ultimos_registros.items() if estado == "SÍ"]
 
 
 def upsert_asistencias(sheet_id, hoja_nombre, nuevas_filas):
     client = get_client()
     hoja = client.open_by_key(sheet_id).worksheet(hoja_nombre)
     datos = hoja.get_all_values()
+    if not datos:
+        raise ValueError("La hoja de asistencias no tiene encabezados.")
+
     encabezados = datos[0]
+    idx = _indices_columnas(encabezados, ["Fecha", "Jugadora"])
 
-    idx_fecha = encabezados.index("Fecha")
-    idx_jugadora = encabezados.index("Jugadora")
-
-    nuevas_dict = {(f[0], f[1]): f for f in nuevas_filas}
+    nuevas_dict = {(f[0].strip(), f[1].strip()): f for f in nuevas_filas}
     filas_existentes = datos[1:]
     filas_actualizadas = set()
-    nuevas_para_agregar = []
+    updates = []
 
     for i, fila in enumerate(filas_existentes):
-        if len(fila) < max(idx_fecha, idx_jugadora) + 1:
+        if len(fila) <= max(idx.values()):
             continue
-        clave = (fila[idx_fecha].strip(), fila[idx_jugadora].strip())
+        clave = (fila[idx["Fecha"]].strip(), fila[idx["Jugadora"]].strip())
         if clave in nuevas_dict:
-            hoja.update(f"A{i+2}", [nuevas_dict[clave]])
+            updates.append({"range": f"A{i + 2}", "values": [nuevas_dict[clave]]})
             filas_actualizadas.add(clave)
 
-    for clave, fila in nuevas_dict.items():
-        if clave not in filas_actualizadas:
-            nuevas_para_agregar.append(fila)
+    if updates:
+        hoja.batch_update(updates)
 
+    nuevas_para_agregar = [fila for clave, fila in nuevas_dict.items() if clave not in filas_actualizadas]
     if nuevas_para_agregar:
         hoja.append_rows(nuevas_para_agregar, value_input_option="USER_ENTERED")
+
+    return {
+        "actualizadas": len(updates),
+        "agregadas": len(nuevas_para_agregar),
+    }

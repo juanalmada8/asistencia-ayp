@@ -1,7 +1,6 @@
-
 # Asistencia App - Hockey
 
-Aplicación profesional construida con **Streamlit** para registrar y analizar asistencias de jugadoras en entrenamientos deportivos. Guarda la información en Google Sheets y genera un resumen automático con métricas por fecha, jugadora y mes.
+Aplicación construida con **Streamlit** para registrar y analizar asistencias de jugadoras en entrenamientos deportivos. Guarda la información en Google Sheets y genera un resumen automático con métricas por fecha, jugadora y mes.
 
 ---
 
@@ -10,30 +9,30 @@ Aplicación profesional construida con **Streamlit** para registrar y analizar a
 - Registro de asistencia por jugadora y fecha
 - Marcar si llegó tarde y agregar comentarios
 - Prevención de duplicados (upsert)
-- Filtro inteligente: muestra solo jugadoras que faltan
+- Filtro inteligente: muestra solo jugadoras pendientes
 - Cálculo de estadísticas mensuales
 - Generación de resumen en una hoja adicional del mismo Google Sheet
 - Autenticación por clave para acceso restringido
+- Tabla editable para carga rápida de asistencia
 
 ---
 
 ## Estructura del proyecto
 
 ASISTENCIA_APP/
-├── main.py                # app principal (Streamlit)
+├── app.py                 # app principal (Streamlit)
 ├── config.py              # configuración global (IDs, timezone)
 ├── requirements.txt       # dependencias del proyecto
 ├── favicon.png            # icono de la página
 ├── icon.jpg               # logo principal
 ├── services/
 │   ├── google_sheets.py   # acceso a Sheets (leer/escribir)
-│   └── asistencia.py      # generación de resumen, cálculos
+│   └── asistencia.py      # generación de resumen y cálculos
 ├── ui/
 │   ├── login.py           # login por clave
 │   ├── registro.py        # formulario de asistencia
 │   └── resumen.py         # botón para generar resumen
-├── utils/
-│   └── helpers.py         # utilidades auxiliares
+└── utils/
 
 ---
 
@@ -47,10 +46,12 @@ ASISTENCIA_APP/
 
 ## Instalación
 
+```bash
 python -m venv venv
 source venv/bin/activate  # o venv\Scripts\activate en Windows
 pip install -r requirements.txt
-streamlit run main.py
+streamlit run app.py
+```
 
 ---
 
@@ -58,6 +59,7 @@ streamlit run main.py
 
 En `.streamlit/secrets.toml`:
 
+```toml
 [app]
 password = "tu_clave_secreta"
 
@@ -68,7 +70,7 @@ private_key_id = "..."
 private_key = "-----BEGIN PRIVATE KEY-----\n..."
 client_email = "..."
 client_id = "..."
-...
+```
 
 ---
 
@@ -77,13 +79,7 @@ client_id = "..."
 - Gráficos en Streamlit (asistencia por semana, top 5 jugadoras, etc.)
 - Exportación a Excel o PDF
 - Filtros por categoría (ej: Sub 14, Primera)
-- Dashboard visual
-
----
-
-## Autor
-
-Desarrollado por **Juan Almada**, 2025.
+- Dashboard visual avanzado
 
 ---
 

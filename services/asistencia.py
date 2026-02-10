@@ -4,6 +4,8 @@ from oauth2client.service_account import ServiceAccountCredentials
 from config import CREDENTIALS_DICT
 
 SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+REQUIRED_COLUMNS = ["Fecha", "Jugadora", "Asistió", "Llegó tarde"]
+
 
 def generar_resumen(sheet_id):
     creds = ServiceAccountCredentials.from_json_keyfile_dict(CREDENTIALS_DICT, SCOPE)
@@ -15,19 +17,24 @@ def generar_resumen(sheet_id):
     if not raw_data or len(raw_data) < 2:
         return None
 
-    df = pd.DataFrame(raw_data[1:], columns=raw_data[0])
-    df["Fecha"] = pd.to_datetime(df["Fecha"])
-    df["Asistió"] = df["Asistió"].str.strip().str.upper()
-    df["Llegó tarde"] = df["Llegó tarde"].str.strip().str.upper()
+    headers = raw_data[0]
+    missing = [c for c in REQUIRED_COLUMNS if c not in headers]
+    if missing:
+        raise ValueError(f"Faltan columnas requeridas en 'Asistencias': {', '.join(missing)}")
+
+    df = pd.DataFrame(raw_data[1:], columns=headers)
+    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
+    df = df.dropna(subset=["Fecha", "Jugadora"])
+
+    df["Jugadora"] = df["Jugadora"].astype(str).str.strip()
+    df["Asistió"] = df["Asistió"].astype(str).str.strip().str.upper()
+    df["Llegó tarde"] = df["Llegó tarde"].astype(str).str.strip().str.upper()
     df["Mes"] = df["Fecha"].dt.to_period("M")
 
     entrenamientos_por_mes = df.groupby("Mes")["Fecha"].nunique().reset_index(name="Entrenamientos del mes")
 
     presencias_por_jugadora_mes = (
-        df[df["Asistió"] == "SÍ"]
-        .groupby(["Mes", "Jugadora"])
-        .size()
-        .reset_index(name="Presencias")
+        df[df["Asistió"] == "SÍ"].groupby(["Mes", "Jugadora"]).size().reset_index(name="Presencias")
     )
 
     llegadas_tarde_mes = (
