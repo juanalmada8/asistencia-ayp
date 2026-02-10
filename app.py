@@ -141,7 +141,6 @@ st.markdown(
     <div class="app-header">
         <div>
             <div class="app-title">Registro de Asistencia</div>
-            <div class="app-subtitle">Marcá rápido y guardá en un toque</div>
         </div>
         <div style="font-size: 1.4rem;">🏑</div>
     </div>
