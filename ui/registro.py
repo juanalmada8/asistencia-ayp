@@ -3,8 +3,11 @@ import streamlit as st
 
 
 def mostrar_formulario_asistencia(jugadoras_faltantes, fecha):
-    st.markdown("### Jugadoras pendientes")
-    st.caption("Marcá asistencia, tardanza y comentario en una sola tabla.")
+    st.markdown('<div class="section-title">Jugadoras pendientes</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-caption">Marcá asistencia, tardanza y comentario en una sola tabla.</div>',
+        unsafe_allow_html=True,
+    )
 
     default_df = pd.DataFrame(
         {
@@ -22,9 +25,9 @@ def mostrar_formulario_asistencia(jugadoras_faltantes, fecha):
         num_rows="fixed",
         column_config={
             "Jugadora": st.column_config.TextColumn(disabled=True),
-            "Asistió": st.column_config.CheckboxColumn(default=False),
-            "Llegó tarde": st.column_config.CheckboxColumn(default=False),
-            "Comentario": st.column_config.TextColumn(max_chars=120),
+            "Asistió": st.column_config.CheckboxColumn(default=False, width="small", label="Asistió"),
+            "Llegó tarde": st.column_config.CheckboxColumn(default=False, width="small", label="Tarde"),
+            "Comentario": st.column_config.TextColumn(max_chars=120, width="medium"),
         },
         key=f"asistencia_editor_{fecha.strftime('%Y%m%d')}",
     )
