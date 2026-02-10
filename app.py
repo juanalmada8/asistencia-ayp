@@ -55,7 +55,10 @@ css = """
         margin-bottom: 0.9rem;
     }
 
-    div[data-testid="stVerticalBlock"]:has(.banner-marker) button {
+    div[data-testid="stButton"][id="banner_home"] button,
+    div#banner_home button,
+    button#banner_home,
+    button[aria-label="Inicio"] {
         display: block;
         width: 100%;
         height: 140px;
@@ -73,7 +76,10 @@ css = """
         color: transparent;
     }
 
-    div[data-testid="stVerticalBlock"]:has(.banner-marker) button:active {
+    div[data-testid="stButton"][id="banner_home"] button:active,
+    div#banner_home button:active,
+    button#banner_home:active,
+    button[aria-label="Inicio"]:active {
         transform: scale(0.995);
     }
 
@@ -140,13 +146,15 @@ css = """
         font-weight: 600;
     }
 
-    .tabbar div[role="radiogroup"] {
+    .tabbar div[role="radiogroup"],
+    div[role="radiogroup"][aria-label="Secciones"] {
         display: flex;
         gap: 0.6rem;
         margin-bottom: 0.6rem;
     }
 
-    .tabbar div[role="radiogroup"] label {
+    .tabbar div[role="radiogroup"] label,
+    div[role="radiogroup"][aria-label="Secciones"] label {
         margin: 0;
         padding: 0.45rem 1rem;
         border-radius: 999px;
@@ -157,11 +165,14 @@ css = """
     }
 
     .tabbar div[role="radiogroup"] label svg,
-    .tabbar div[role="radiogroup"] label input {
+    .tabbar div[role="radiogroup"] label input,
+    div[role="radiogroup"][aria-label="Secciones"] label svg,
+    div[role="radiogroup"][aria-label="Secciones"] label input {
         display: none !important;
     }
 
-    .tabbar div[role="radiogroup"] label:has(input:checked) {
+    .tabbar div[role="radiogroup"] label:has(input:checked),
+    div[role="radiogroup"][aria-label="Secciones"] label:has(input:checked) {
         border-color: #ffffff;
         background: #1b2230;
         box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
@@ -173,19 +184,21 @@ css = """
         .metric-card { display: flex; align-items: center; justify-content: space-between; }
         .metric-value { font-size: 1.6rem; }
         .app-title { font-size: 1.15rem; }
-        div[data-testid="stVerticalBlock"]:has(.banner-marker) button { height: 110px; }
-        .tabbar div[role="radiogroup"] { gap: 0.4rem; }
+        div[data-testid="stButton"][id="banner_home"] button,
+        div#banner_home button,
+        button#banner_home,
+        button[aria-label="Inicio"] { height: 110px; }
+        .tabbar div[role="radiogroup"],
+        div[role="radiogroup"][aria-label="Secciones"] { gap: 0.4rem; }
     }
     </style>
     """
 
 st.markdown(css.replace("LOGO_B64", logo_b64), unsafe_allow_html=True)
 
-with st.container():
-    st.markdown('<div class="banner-marker"></div>', unsafe_allow_html=True)
-    if st.button("Inicio", key="banner_home"):
-        st.session_state["tab_seleccion"] = "Registro"
-        st.rerun()
+if st.button("Inicio", key="banner_home"):
+    st.session_state["tab_seleccion"] = "Registro"
+    st.rerun()
 
 if not login():
     st.stop()
