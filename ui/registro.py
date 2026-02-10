@@ -116,6 +116,9 @@ def mostrar_registro_tab(sheet_id):
         with st.spinner("Cargando jugadoras..."):
             st.session_state.jugadoras_data = cargar_jugadoras_con_categoria()
 
+    if any(j.get("ambas") for j in st.session_state.jugadoras_data):
+        st.warning("Hay jugadoras marcadas con ambas categorías. Se asignan solo a la primera detectada.")
+
     jugadoras = filtrar_jugadoras(st.session_state.jugadoras_data, categoria)
     if not jugadoras:
         st.warning("No hay jugadoras para esta categoría.")

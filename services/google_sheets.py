@@ -1,4 +1,5 @@
 import gspread
+import re
 from oauth2client.service_account import ServiceAccountCredentials
 import streamlit as st
 
@@ -16,18 +17,16 @@ def get_client():
     return gspread.authorize(creds)
 
 
-def _parse_categorias(value):
+def _parse_categoria_unica(value):
     if value is None:
-        return set()
-    texto = str(value).replace(";", ",")
-    partes = [p.strip() for p in texto.split(",") if p.strip()]
-    categorias = set()
-    for parte in partes:
-        if parte == "1":
-            categorias.add("1")
-        elif parte == "2":
-            categorias.add("2")
-    return categorias
+        return "", False
+    texto = str(value)
+    encontrados = re.findall(r"[12]", texto)
+    if not encontrados:
+        return "", False
+    categoria = encontrados[0]
+    ambas = ("1" in encontrados) and ("2" in encontrados)
+    return categoria, ambas
 
 
 @st.cache_data(ttl=300)
@@ -45,14 +44,17 @@ def cargar_jugadoras_con_categoria():
     nombres = hoja.col_values(1)[1:]
     categorias = hoja.col_values(2)[1:]
     total = max(len(nombres), len(categorias))
-    jugadoras = []
+    jugadoras = {}
     for i in range(total):
         nombre = nombres[i].strip() if i < len(nombres) else ""
         if not nombre:
             continue
         categoria_raw = categorias[i] if i < len(categorias) else ""
-        jugadoras.append({"jugadora": nombre, "categorias": _parse_categorias(categoria_raw)})
-    return jugadoras
+        categoria, ambas = _parse_categoria_unica(categoria_raw)
+        if nombre in jugadoras:
+            continue
+        jugadoras[nombre] = {"jugadora": nombre, "categoria": categoria, "ambas": ambas}
+    return list(jugadoras.values())
 
 
 def _indices_columnas(encabezados, requeridas):

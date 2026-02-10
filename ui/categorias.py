@@ -16,13 +16,13 @@ def selector_categoria(key="categoria_seleccion"):
 
 def filtrar_jugadoras(jugadoras_con_categoria, categoria):
     if categoria == "Todas":
-        nombres = [j["jugadora"] for j in jugadoras_con_categoria]
+        nombres = [j.get("jugadora", "") for j in jugadoras_con_categoria if j.get("jugadora")]
         return sorted(set(nombres))
 
     codigo = "1" if categoria == "Primera" else "2"
     nombres = [
-        j["jugadora"]
+        j.get("jugadora", "")
         for j in jugadoras_con_categoria
-        if codigo in j.get("categorias", set())
+        if j.get("categoria") == codigo
     ]
     return sorted(set(nombres))
