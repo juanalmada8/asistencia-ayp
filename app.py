@@ -55,7 +55,7 @@ css = """
         margin-bottom: 0.9rem;
     }
 
-    .banner-wrap button {
+    .block-container div[data-testid="stButton"]:first-of-type button {
         display: block;
         width: 100%;
         height: 140px;
@@ -70,9 +70,10 @@ css = """
         box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
         margin-bottom: 0.9rem;
         font-size: 0;
+        color: transparent;
     }
 
-    .banner-wrap button:active {
+    .block-container div[data-testid="stButton"]:first-of-type button:active {
         transform: scale(0.995);
     }
 
@@ -139,28 +140,55 @@ css = """
         font-weight: 600;
     }
 
+    .tabbar div[role="radiogroup"] {
+        display: flex;
+        gap: 0.6rem;
+        margin-bottom: 0.6rem;
+    }
+
+    .tabbar div[role="radiogroup"] label {
+        margin: 0;
+        padding: 0.45rem 1rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+        cursor: pointer;
+    }
+
+    .tabbar div[role="radiogroup"] label svg,
+    .tabbar div[role="radiogroup"] label input {
+        display: none !important;
+    }
+
+    .tabbar div[role="radiogroup"] label:has(input:checked) {
+        border-color: #ffffff;
+        background: #1b2230;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+    }
+
     @media (max-width: 640px) {
         .block-container { padding-left: 0.9rem; padding-right: 0.9rem; }
         .metrics { grid-template-columns: 1fr; }
         .metric-card { display: flex; align-items: center; justify-content: space-between; }
         .metric-value { font-size: 1.6rem; }
         .app-title { font-size: 1.15rem; }
-        .banner-wrap button { height: 110px; }
+        .block-container div[data-testid="stButton"]:first-of-type button { height: 110px; }
+        .tabbar div[role="radiogroup"] { gap: 0.4rem; }
     }
     </style>
     """
 
 st.markdown(css.replace("LOGO_B64", logo_b64), unsafe_allow_html=True)
 
-st.markdown('<div class="banner-wrap">', unsafe_allow_html=True)
 if st.button("Inicio", key="banner_home"):
     st.session_state["tab_seleccion"] = "Registro"
     st.rerun()
-st.markdown("</div>", unsafe_allow_html=True)
 
 if not login():
     st.stop()
 
+st.markdown('<div class="tabbar">', unsafe_allow_html=True)
 tab_seleccion = st.radio(
     "Secciones",
     ["Registro", "Resumen"],
@@ -168,6 +196,7 @@ tab_seleccion = st.radio(
     label_visibility="collapsed",
     key="tab_seleccion",
 )
+st.markdown("</div>", unsafe_allow_html=True)
 
 if tab_seleccion == "Registro":
     mostrar_registro_tab(SHEET_ID)

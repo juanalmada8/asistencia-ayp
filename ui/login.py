@@ -24,8 +24,11 @@ def login():
             st.warning(f"Demasiados intentos fallidos. Reintentá en {restante} minuto(s).")
             return False
 
-        pwd = st.text_input("Clave de acceso", type="password")
-        if st.button("Ingresar", type="primary") and pwd:
+        with st.form("login_form"):
+            pwd = st.text_input("Clave de acceso", type="password")
+            submitted = st.form_submit_button("Ingresar", type="primary")
+
+        if submitted and pwd:
             if pwd == st.secrets["app"]["password"]:
                 st.session_state.logged_in = True
                 st.session_state.login_attempts = 0
