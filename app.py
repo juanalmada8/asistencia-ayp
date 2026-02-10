@@ -1,4 +1,3 @@
-import base64
 import streamlit as st
 
 from config import SHEET_ID
@@ -7,9 +6,6 @@ from ui.registro import mostrar_registro_tab
 from ui.resumen import mostrar_resumen_insights
 
 st.set_page_config(page_title="Registro de Asistencia", page_icon="icon.jpg", layout="centered")
-
-with open("icon.jpg", "rb") as logo_file:
-    logo_b64 = base64.b64encode(logo_file.read()).decode("utf-8")
 
 css = """
     <style>
@@ -53,30 +49,6 @@ css = """
         background: linear-gradient(135deg, #141a2b 0%, #0f121a 100%);
         border: 1px solid var(--border);
         margin-bottom: 0.9rem;
-    }
-
-    form#banner_form button,
-    div[data-testid="stForm"][id="banner_form"] button {
-        display: block;
-        width: 100%;
-        height: 140px;
-        padding: 0;
-        border-radius: 18px;
-        border: 2px solid #ffffff;
-        background-color: #121522;
-        background-image: url("data:image/jpeg;base64,LOGO_B64");
-        background-repeat: no-repeat;
-        background-position: center;
-        background-size: contain;
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-        margin-bottom: 0.9rem;
-        font-size: 0;
-        color: transparent;
-    }
-
-    form#banner_form button:active,
-    div[data-testid="stForm"][id="banner_form"] button:active {
-        transform: scale(0.995);
     }
 
     .app-title {
@@ -180,24 +152,18 @@ css = """
         .metric-card { display: flex; align-items: center; justify-content: space-between; }
         .metric-value { font-size: 1.6rem; }
         .app-title { font-size: 1.15rem; }
-        form#banner_form button,
-        div[data-testid="stForm"][id="banner_form"] button { height: 110px; }
         .tabbar div[role="radiogroup"],
         div[role="radiogroup"][aria-label="Secciones"] { gap: 0.4rem; }
     }
     </style>
     """
 
-st.markdown(css.replace("LOGO_B64", logo_b64), unsafe_allow_html=True)
-
-with st.form("banner_form"):
-    banner_click = st.form_submit_button("Inicio")
-if banner_click:
-    st.session_state["tab_seleccion"] = "Registro"
-    st.rerun()
+st.markdown(css, unsafe_allow_html=True)
 
 if not login():
     st.stop()
+
+st.image("icon.jpg", width=110)
 
 st.markdown('<div class="tabbar">', unsafe_allow_html=True)
 tab_seleccion = st.radio(
