@@ -5,16 +5,48 @@ import streamlit as st
 def mostrar_formulario_asistencia(jugadoras_faltantes, fecha):
     st.markdown('<div class="section-title">Jugadoras pendientes</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="section-caption">Marcá asistencia, tardanza y comentario en una sola tabla.</div>',
+        '<div class="section-caption">Usá tarjetas en el celu o la tabla en desktop.</div>',
         unsafe_allow_html=True,
     )
+
+    modo_celu = st.toggle("Modo celular", value=True, help="Tarjetas más cómodas en pantalla chica.")
+
+    if modo_celu:
+        filas = []
+        for jugadora in jugadoras_faltantes:
+            key_base = f"{fecha.strftime('%Y%m%d')}_{jugadora}"
+            with st.container(border=True):
+                st.markdown(f"**{jugadora}**")
+                c1, c2 = st.columns(2)
+                asistio = c1.checkbox("Asistió", key=f"{key_base}_asistio")
+                tarde = c2.checkbox("Tarde", key=f"{key_base}_tarde", disabled=not asistio)
+                comentario = st.text_input(
+                    "Comentario",
+                    key=f"{key_base}_coment",
+                    placeholder="Opcional",
+                    max_chars=120,
+                )
+            filas.append(
+                [
+                    fecha.strftime("%Y-%m-%d"),
+                    jugadora.strip(),
+                    "SÍ" if asistio else "NO",
+                    "SÍ" if asistio and tarde else "NO",
+                    str(comentario).strip().upper(),
+                ]
+            )
+
+        if st.button("✅ Guardar asistencia", type="primary"):
+            return filas
+
+        return []
 
     default_df = pd.DataFrame(
         {
             "Jugadora": jugadoras_faltantes,
             "Asistió": [False] * len(jugadoras_faltantes),
             "Llegó tarde": [False] * len(jugadoras_faltantes),
-            "Comentario": [""] * len(jugadoras_faltantes),
+            "Comentario": ["" for _ in jugadoras_faltantes],
         }
     )
 
