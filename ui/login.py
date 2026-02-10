@@ -40,9 +40,9 @@ def login():
 
             if intentos_restantes <= 0:
                 st.session_state.login_blocked_until = datetime.now() + timedelta(minutes=BLOQUEO_MINUTOS)
-                st.error("❌ Se bloqueó temporalmente el acceso por seguridad.")
+                st.error("Se bloqueó temporalmente el acceso por seguridad.")
             else:
-                st.error(f"❌ Clave incorrecta. Intentos restantes: {intentos_restantes}")
+                st.error(f"Clave incorrecta. Intentos restantes: {intentos_restantes}")
 
         return False
 

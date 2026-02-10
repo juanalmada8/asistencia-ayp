@@ -82,7 +82,7 @@ def obtener_asistencias_previas(fecha):
         idx = _indices_columnas(encabezados, ["Fecha", "Jugadora", "Asistió"])
     except ValueError:
         st.error(
-            "❌ Error al leer los encabezados de la hoja 'Asistencias'. "
+            "Error al leer los encabezados de la hoja 'Asistencias'. "
             "Verificá que existan las columnas: Fecha, Jugadora, Asistió."
         )
         st.write("Encabezados detectados:", encabezados)

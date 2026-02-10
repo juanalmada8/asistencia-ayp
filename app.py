@@ -132,13 +132,13 @@ if not login():
 
 tab_seleccion = st.radio(
     "Secciones",
-    ["📝 Registro", "📊 Resumen"],
+    ["Registro", "Resumen"],
     horizontal=True,
     label_visibility="collapsed",
 )
 
-if tab_seleccion == "📝 Registro":
+if tab_seleccion == "Registro":
     mostrar_registro_tab(SHEET_ID)
 
-if tab_seleccion == "📊 Resumen":
+if tab_seleccion == "Resumen":
     mostrar_resumen_insights(SHEET_ID)

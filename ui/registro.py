@@ -45,7 +45,7 @@ def mostrar_formulario_asistencia(jugadoras_faltantes, fecha):
                 ]
             )
 
-        if st.button("✅ Guardar asistencia", type="primary"):
+        if st.button("Guardar asistencia", type="primary"):
             return filas
 
         return []
@@ -73,7 +73,7 @@ def mostrar_formulario_asistencia(jugadoras_faltantes, fecha):
         key=f"asistencia_editor_{fecha.strftime('%Y%m%d')}",
     )
 
-    if st.button("✅ Guardar asistencia", type="primary"):
+    if st.button("Guardar asistencia", type="primary"):
         filas = []
         for _, row in edited_df.iterrows():
             asistio = bool(row["Asistió"])
@@ -99,9 +99,7 @@ def mostrar_registro_tab(sheet_id):
         <div class="app-header">
             <div>
                 <div class="app-title">Registro de Asistencia</div>
-                <div class="app-subtitle">Marcá rápido y guardá en un toque</div>
             </div>
-            <div style="font-size: 1.4rem;">🏑</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -117,7 +115,7 @@ def mostrar_registro_tab(sheet_id):
             st.session_state.jugadoras_data = cargar_jugadoras_con_categoria()
 
     if any(j.get("ambas") for j in st.session_state.jugadoras_data):
-        st.warning("Hay jugadoras marcadas con ambas categorías. Se asignan solo a la primera detectada.")
+        st.caption("Hay jugadoras marcadas con ambas categorías. Se asignan solo a la primera detectada.")
 
     jugadoras = filtrar_jugadoras(st.session_state.jugadoras_data, categoria)
     if not jugadoras:
@@ -153,7 +151,7 @@ def mostrar_registro_tab(sheet_id):
     )
 
     if not jugadoras_faltantes:
-        st.success("✅ Todas las jugadoras ya tienen registrada la asistencia para esta fecha.")
+        st.success("Todas las jugadoras ya tienen registrada la asistencia para esta fecha.")
         return
 
     nuevas_filas = mostrar_formulario_asistencia(jugadoras_faltantes, fecha)
@@ -163,12 +161,12 @@ def mostrar_registro_tab(sheet_id):
                 resultado = upsert_asistencias(sheet_id, "Asistencias", nuevas_filas)
                 total = sum(1 for fila in nuevas_filas if fila[2] == "SÍ")
                 st.success(
-                    "✅ ¡Asistencia guardada! "
+                    "Asistencia guardada. "
                     f"{total} jugadoras asistieron. "
                     f"(Actualizadas: {resultado['actualizadas']} | Agregadas: {resultado['agregadas']})"
                 )
                 del st.session_state["asistencias_previas"]
                 obtener_asistencias_previas.clear()
             except Exception as e:
-                st.error("❌ Error al guardar la asistencia.")
+                st.error("Error al guardar la asistencia.")
                 st.exception(e)
