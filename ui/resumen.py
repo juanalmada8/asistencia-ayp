@@ -5,7 +5,17 @@ from services.asistencia import generar_resumen
 
 
 def exportar_df_a_hoja(ws, df, fila_inicio):
-    ws.update(f"A{fila_inicio}", [df.columns.tolist()] + df.astype(str).values.tolist())
+    valores = [df.columns.tolist()] + df.astype(str).fillna("").values.tolist()
+    if not valores:
+        return fila_inicio + 1
+
+    filas_necesarias = fila_inicio + len(valores) - 1
+    cols_necesarias = len(valores[0])
+
+    if filas_necesarias > ws.row_count or cols_necesarias > ws.col_count:
+        ws.resize(rows=max(ws.row_count, filas_necesarias), cols=max(ws.col_count, cols_necesarias))
+
+    ws.update(f"A{fila_inicio}", valores, value_input_option="USER_ENTERED")
     return fila_inicio + len(df) + 2
 
 
